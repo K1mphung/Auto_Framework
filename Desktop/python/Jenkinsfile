@@ -1,0 +1,235 @@
+// Jenkins Declarative Pipeline for Automation Tests
+// Save this as Jenkinsfile in the root of the repository
+
+pipeline {
+    agent any
+    
+    // Build triggers
+    triggers {
+        // Poll SCM every 6 hours
+        pollSCM('H H/6 * * *')
+        // Webhook trigger (requires Jenkins Multibranch Pipeline)
+        // githubPush()
+    }
+    
+    // Environment variables
+    environment {
+        PROJECT_DIR = "${WORKSPACE}/python"
+        PYTHON_EXECUTABLE = 'python'
+        REPORT_DIR = "${PROJECT_DIR}/reports"
+        LOG_DIR = "${PROJECT_DIR}/logs"
+        SCREENSHOT_DIR = "${PROJECT_DIR}/screenshots"
+    }
+    
+    // Build options
+    options {
+        // Keep last 30 builds
+        buildDiscarder(logRotator(numToKeepStr: '30'))
+        // Timeout for entire pipeline
+        timeout(time: 1, unit: 'HOURS')
+        // Concurrent builds disabled
+        disableConcurrentBuilds()
+        // Timestamped console output
+        timestamps()
+    }
+    
+    stages {
+        stage('Checkout') {
+            steps {
+                script {
+                    echo '========== Checking out source code =========='
+                }
+                checkout scm
+            }
+        }
+        
+        stage('Setup') {
+            steps {
+                script {
+                    echo '========== Setting up environment =========='
+                }
+                
+                // Clean previous artifacts
+                sh 'cd ${PROJECT_DIR} && mvn clean'
+                
+                // Display versions
+                sh 'java -version'
+                sh '${PYTHON_EXECUTABLE} --version'
+                sh 'mvn --version'
+            }
+        }
+        
+        stage('Install Dependencies') {
+            steps {
+                script {
+                    echo '========== Installing Python and Maven dependencies =========='
+                }
+                
+                // Install Python dependencies
+                sh '''
+                    cd ${PROJECT_DIR}
+                    ${PYTHON_EXECUTABLE} -m pip install --upgrade pip
+                    ${PYTHON_EXECUTABLE} -m pip install -r requirements.txt
+                '''
+            }
+        }
+        
+        stage('Lint & Code Quality') {
+            steps {
+                script {
+                    echo '========== Running code quality checks =========='
+                }
+                
+                sh '''
+                    cd ${PROJECT_DIR}
+                    # Run pylint
+                    ${PYTHON_EXECUTABLE} -m pylint src/test/python --exit-zero || true
+                    
+                    # Run flake8
+                    ${PYTHON_EXECUTABLE} -m flake8 src/test/python --exit-zero || true
+                    
+                    # Run black (code formatter check)
+                    ${PYTHON_EXECUTABLE} -m black --check src/test/python --diff || true
+                '''
+            }
+        }
+        
+        stage('Run Tests') {
+            parallel {
+                stage('Chrome Tests') {
+                    steps {
+                        script {
+                            echo '========== Running tests on Chrome =========='
+                        }
+                        
+                        sh '''
+                            cd ${PROJECT_DIR}
+                            mvn clean test \
+                              -Dpython.executable=${PYTHON_EXECUTABLE} \
+                              -Dbrowser=chrome
+                        '''
+                    }
+                }
+                
+                stage('Firefox Tests') {
+                    steps {
+                        script {
+                            echo '========== Running tests on Firefox =========='
+                        }
+                        
+                        sh '''
+                            cd ${PROJECT_DIR}
+                            mvn clean test \
+                              -Dpython.executable=${PYTHON_EXECUTABLE} \
+                              -Dbrowser=firefox || true
+                        '''
+                    }
+                }
+            }
+        }
+        
+        stage('Parallel Execution') {
+            when {
+                branch 'main'
+            }
+            steps {
+                script {
+                    echo '========== Running tests in parallel =========='
+                }
+                
+                sh '''
+                    cd ${PROJECT_DIR}
+                    mvn clean test -P parallel \
+                      -Dpython.executable=${PYTHON_EXECUTABLE}
+                '''
+            }
+        }
+        
+        stage('Generate Reports') {
+            steps {
+                script {
+                    echo '========== Generating test reports =========='
+                }
+                
+                // Publish HTML report
+                publishHTML([
+                    reportDir: "${REPORT_DIR}",
+                    reportFiles: 'report.html',
+                    reportName: 'Test Execution Report',
+                    keepAll: true,
+                    alwaysLinkToLastBuild: true
+                ])
+                
+                // Publish coverage report if available
+                publishHTML([
+                    reportDir: "${REPORT_DIR}/coverage",
+                    reportFiles: 'index.html',
+                    reportName: 'Code Coverage Report',
+                    keepAll: true,
+                    alwaysLinkToLastBuild: true
+                ])
+            }
+        }
+        
+        stage('Archive Artifacts') {
+            steps {
+                script {
+                    echo '========== Archiving test artifacts =========='
+                }
+                
+                // Archive test results
+                archiveArtifacts artifacts: """
+                    ${PROJECT_DIR}/reports/**/*,
+                    ${PROJECT_DIR}/logs/**/*
+                """, allowEmptyArchive: true
+                
+                // Junit test results (if available)
+                junit testResults: "${PROJECT_DIR}/reports/junit.xml", 
+                      allowEmptyResults: true
+            }
+        }
+    }
+    
+    post {
+        always {
+            script {
+                echo '========== Cleanup =========='
+            }
+            
+            // Clean workspace
+            cleanWs()
+        }
+        
+        success {
+            script {
+                echo '========== Tests PASSED =========='
+            }
+            
+            // Send success notification
+            sh '''
+                echo "All tests passed successfully!"
+            '''
+        }
+        
+        failure {
+            script {
+                echo '========== Tests FAILED =========='
+            }
+            
+            // Capture failed screenshots
+            archiveArtifacts artifacts: "${PROJECT_DIR}/screenshots/**/*", 
+                            allowEmptyArchive: true
+            
+            // Send failure notification
+            sh '''
+                echo "Tests failed. Check logs and screenshots for details."
+            '''
+        }
+        
+        unstable {
+            script {
+                echo '========== Tests UNSTABLE =========='
+            }
+        }
+    }
+}

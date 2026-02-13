@@ -1,0 +1,347 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 
+         http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <!-- Project Information -->
+    <groupId>com.autologin</groupId>
+    <artifactId>autologin-automation-framework</artifactId>
+    <version>1.0.0</version>
+    <name>AutoLogin Automation Testing Framework</name>
+    <description>Production-ready test automation framework using Selenium, Python, and PyTest</description>
+    <url>https://github.com/yourorg/autologin-framework</url>
+
+    <!-- Project Properties -->
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.compiler.source>11</maven.compiler.source>
+        <maven.compiler.target>11</maven.compiler.target>
+        
+        <!-- Python Configuration -->
+        <python.executable>python</python.executable>
+        <python.requirements.file>${project.basedir}/requirements.txt</python.requirements.file>
+        <python.test.dir>${project.basedir}/src/test/python</python.test.dir>
+    </properties>
+
+    <!-- Build Configuration -->
+    <build>
+        <plugins>
+            <!-- ============================================================================= -->
+            <!-- Maven Exec Plugin - Execute Python Commands and PyTest Tests               -->
+            <!-- ============================================================================= -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.1.0</version>
+                <executions>
+                    <!-- Install Python Dependencies -->
+                    <execution>
+                        <id>install-dependencies</id>
+                        <phase>initialize</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>${python.executable}</executable>
+                            <arguments>
+                                <argument>-m</argument>
+                                <argument>pip</argument>
+                                <argument>install</argument>
+                                <argument>-r</argument>
+                                <argument>${python.requirements.file}</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+
+                    <!-- Run All Tests -->
+                    <execution>
+                        <id>run-tests</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>${python.executable}</executable>
+                            <arguments>
+                                <argument>-m</argument>
+                                <argument>pytest</argument>
+                                <argument>${python.test.dir}/tests</argument>
+                                <argument>-v</argument>
+                                <argument>--html=reports/report.html</argument>
+                                <argument>--self-contained-html</argument>
+                                <argument>--cov=src/test/python</argument>
+                                <argument>--cov-report=html:reports/coverage</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+
+                    <!-- Run Smoke Tests Only -->
+                    <execution>
+                        <id>run-smoke-tests</id>
+                        <phase>none</phase> <!-- Manual activation -->
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>${python.executable}</executable>
+                            <arguments>
+                                <argument>-m</argument>
+                                <argument>pytest</argument>
+                                <argument>${python.test.dir}/tests</argument>
+                                <argument>-m</argument>
+                                <argument>smoke</argument>
+                                <argument>-v</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+
+                    <!-- Run Tests in Parallel -->
+                    <execution>
+                        <id>run-parallel-tests</id>
+                        <phase>none</phase> <!-- Manual activation -->
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>${python.executable}</executable>
+                            <arguments>
+                                <argument>-m</argument>
+                                <argument>pytest</argument>
+                                <argument>${python.test.dir}/tests</argument>
+                                <argument>-n</argument>
+                                <argument>auto</argument>
+                                <argument>-v</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- ============================================================================= -->
+            <!-- Maven Compiler Plugin - Java Compilation (if needed for utilities)          -->
+            <!-- ============================================================================= -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.11.0</version>
+                <configuration>
+                    <source>11</source>
+                    <target>11</target>
+                </configuration>
+            </plugin>
+
+            <!-- ============================================================================= -->
+            <!-- Maven Surefire Plugin - Test Execution Support                              -->
+            <!-- ============================================================================= -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.0.0</version>
+                <configuration>
+                    <skipTests>true</skipTests> <!-- Skip Java tests; we use PyTest -->
+                </configuration>
+            </plugin>
+
+            <!-- ============================================================================= -->
+            <!-- Maven Clean Plugin - Clean Build Artifacts                                  -->
+            <!-- ============================================================================= -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-clean-plugin</artifactId>
+                <version>3.3.1</version>
+                <configuration>
+                    <filesets>
+                        <fileset>
+                            <directory>reports</directory>
+                        </fileset>
+                        <fileset>
+                            <directory>logs</directory>
+                        </fileset>
+                        <fileset>
+                            <directory>screenshots</directory>
+                        </fileset>
+                        <fileset>
+                            <directory>.pytest_cache</directory>
+                        </fileset>
+                        <fileset>
+                            <directory>__pycache__</directory>
+                        </fileset>
+                    </filesets>
+                </configuration>
+            </plugin>
+
+            <!-- ============================================================================= -->
+            <!-- Maven Failsafe Plugin - Integration Tests                                   -->
+            <!-- ============================================================================= -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <version>3.0.0</version>
+                <configuration>
+                    <skipTests>true</skipTests>
+                </configuration>
+            </plugin>
+
+            <!-- ============================================================================= -->
+            <!-- Maven Assembly Plugin - Package Framework for Distribution                  -->
+            <!-- ============================================================================= -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>3.6.0</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                        <configuration>
+                            <descriptors>
+                                <descriptor>src/assembly/assembly.xml</descriptor>
+                            </descriptors>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- ============================================================================= -->
+            <!-- Maven Resources Plugin - Copy Resources                                     -->
+            <!-- ============================================================================= -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <version>3.3.1</version>
+                <executions>
+                    <execution>
+                        <id>copy-resources</id>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.basedir}/src/test/python/config</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>src/test/resources</directory>
+                                    <filtering>true</filtering>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+    <!-- Dependency Management (Information Only) -->
+    <!-- Python dependencies are managed via requirements.txt -->
+    <dependencies>
+        <!-- No Java dependencies required for pure Python framework -->
+        <!-- However, you can add Java dependencies for utilities if needed -->
+    </dependencies>
+
+    <!-- Profiles for Different Test Scenarios -->
+    <profiles>
+        <!-- Profile: Development -->
+        <profile>
+            <id>dev</id>
+            <properties>
+                <python.executable>python</python.executable>
+            </properties>
+        </profile>
+
+        <!-- Profile: CI/CD Environment -->
+        <profile>
+            <id>ci</id>
+            <properties>
+                <python.executable>python</python.executable>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <version>3.1.0</version>
+                        <executions>
+                            <execution>
+                                <id>run-tests</id>
+                                <configuration>
+                                    <arguments>
+                                        <argument>-m</argument>
+                                        <argument>pytest</argument>
+                                        <argument>${python.test.dir}/tests</argument>
+                                        <argument>-v</argument>
+                                        <argument>--html=reports/report.html</argument>
+                                        <argument>--self-contained-html</argument>
+                                        <argument>--junitxml=reports/junit.xml</argument>
+                                        <argument>--cov=src/test/python</argument>
+                                        <argument>--cov-report=xml:reports/coverage.xml</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <!-- Profile: Parallel Execution -->
+        <profile>
+            <id>parallel</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <version>3.1.0</version>
+                        <executions>
+                            <execution>
+                                <id>run-parallel-tests</id>
+                                <configuration>
+                                    <arguments>
+                                        <argument>-m</argument>
+                                        <argument>pytest</argument>
+                                        <argument>${python.test.dir}/tests</argument>
+                                        <argument>-n</argument>
+                                        <argument>auto</argument>
+                                        <argument>-v</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <!-- Profile: Headless Mode -->
+        <profile>
+            <id>headless</id>
+            <properties>
+                <headless.mode>true</headless.mode>
+            </properties>
+        </profile>
+    </profiles>
+
+    <!-- Reporting Plugins -->
+    <reporting>
+        <plugins>
+            <!-- Maven Surefire Report -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-report-plugin</artifactId>
+                <version>3.0.0</version>
+            </plugin>
+
+            <!-- Project Info Reports -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-project-info-reports-plugin</artifactId>
+                <version>3.4.1</version>
+            </plugin>
+        </plugins>
+    </reporting>
+
+</project>
