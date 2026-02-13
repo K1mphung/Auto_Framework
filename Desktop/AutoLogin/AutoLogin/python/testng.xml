@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE suite [
+  <!ELEMENT suite (test*, listeners?, parameter*)>
+  <!ATTLIST suite name CDATA #REQUIRED>
+  <!ATTLIST suite verbose CDATA #IMPLIED>
+  <!ATTLIST suite parallel CDATA #IMPLIED>
+  <!ATTLIST suite thread-count CDATA #IMPLIED>
+  <!ATTLIST suite xmlns CDATA #IMPLIED>
+  <!ELEMENT test (groups?, classes)>
+  <!ATTLIST test name CDATA #REQUIRED>
+  <!ATTLIST test enabled CDATA #IMPLIED>
+  <!ELEMENT classes (class*)>
+  <!ELEMENT class (methods?)>
+  <!ATTLIST class name CDATA #REQUIRED>
+  <!ELEMENT methods (include|exclude)*>
+  <!ELEMENT include EMPTY>
+  <!ATTLIST include name CDATA #REQUIRED>
+  <!ELEMENT exclude EMPTY>
+  <!ATTLIST exclude name CDATA #REQUIRED>
+  <!ELEMENT groups (run)>
+  <!ELEMENT run (include|exclude)*>
+  <!ELEMENT listeners (listener*)>
+  <!ELEMENT listener EMPTY>
+  <!ELEMENT parameter EMPTY>
+  <!ATTLIST parameter name CDATA #REQUIRED>
+  <!ATTLIST parameter value CDATA #REQUIRED>
+]>
+
+<!-- TestNG Configuration File for AutoLogin Framework -->
+<!-- 
+This file defines test suites and test groups for organized test execution
+Even though we use PyTest, this XML structure helps organize tests
+-->
+
+<suite name="AutoLogin Automation Test Suite" verbose="3" parallel="methods" thread-count="4" xmlns="https://testng.org/schema/testng">
+    
+    <!-- =============================================================== -->
+    <!-- SUITE 1: SMOKE TESTS (Quick sanity check)                       -->
+    <!-- =============================================================== -->
+    <test name="Smoke Tests" enabled="true">
+        <groups>
+            <run>
+                <include name="smoke"/>
+            </run>
+        </groups>
+        <classes>
+            <class name="tests.test_login.TestLogin">
+                <methods>
+                    <include name="test_successful_login"/>
+                    <include name="test_login_page_elements"/>
+                </methods>
+            </class>
+        </classes>
+    </test>
+    
+    <!-- =============================================================== -->
+    <!-- SUITE 2: LOGIN TESTS (All login-related tests)                  -->
+    <!-- =============================================================== -->
+    <test name="Login Feature Tests" enabled="true">
+        <groups>
+            <run>
+                <include name="login"/>
+            </run>
+        </groups>
+        <classes>
+            <class name="tests.test_login.TestLogin">
+                <methods>
+                    <include name="test_successful_login"/>
+                    <include name="test_login_with_invalid_username"/>
+                    <include name="test_login_with_invalid_password"/>
+                    <include name="test_login_with_empty_credentials"/>
+                    <include name="test_login_page_elements"/>
+                    <include name="test_login_with_remember_me"/>
+                </methods>
+            </class>
+            <class name="tests.test_login.TestLoginPageValidation">
+                <methods>
+                    <include name="test_username_field_placeholder"/>
+                </methods>
+            </class>
+        </classes>
+    </test>
+    
+    <!-- =============================================================== -->
+    <!-- SUITE 3: REGRESSION TESTS (Run comprehensive tests)             -->
+    <!-- =============================================================== -->
+    <test name="Regression Test Suite" enabled="true">
+        <groups>
+            <run>
+                <include name="regression"/>
+                <include name="login"/>
+                <include name="ui"/>
+            </run>
+        </groups>
+        <classes>
+            <class name="tests.test_login.TestLogin"/>
+            <class name="tests.test_login.TestLoginPageValidation"/>
+        </classes>
+    </test>
+    
+    <!-- =============================================================== -->
+    <!-- SUITE 4: INTEGRATION TESTS                                      -->
+    <!-- =============================================================== -->
+    <test name="Integration Tests" enabled="true">
+        <groups>
+            <run>
+                <include name="integration"/>
+            </run>
+        </groups>
+        <classes>
+            <!-- Add integration test classes here -->
+            <class name="tests.test_login.TestLogin">
+                <methods>
+                    <include name="test_successful_login"/>
+                </methods>
+            </class>
+        </classes>
+    </test>
+    
+    <!-- =============================================================== -->
+    <!-- SUITE 5: UI TESTS                                               -->
+    <!-- =============================================================== -->
+    <test name="UI Component Tests" enabled="true">
+        <groups>
+            <run>
+                <include name="ui"/>
+            </run>
+        </groups>
+        <classes>
+            <class name="tests.test_login.TestLogin">
+                <methods>
+                    <include name="test_login_page_elements"/>
+                </methods>
+            </class>
+            <class name="tests.test_login.TestLoginPageValidation"/>
+        </classes>
+    </test>
+    
+    <!-- =============================================================== -->
+    <!-- LISTENER: Test execution listener for custom reporting          -->
+    <!-- =============================================================== -->
+    <listeners>
+        <!-- Custom test listeners can be added here -->
+        <!-- Note: PyTest handles this differently than Java TestNG -->
+    </listeners>
+
+    <!-- =============================================================== -->
+    <!-- PARAMETERS: Test-level parameters                               -->
+    <!-- =============================================================== -->
+    <parameter name="browser" value="chrome"/>
+    <parameter name="base_url" value="http://localhost:8080/login"/>
+    <parameter name="headless" value="false"/>
+    <parameter name="implicit_wait" value="10"/>
+    <parameter name="explicit_wait" value="15"/>
+
+</suite>
