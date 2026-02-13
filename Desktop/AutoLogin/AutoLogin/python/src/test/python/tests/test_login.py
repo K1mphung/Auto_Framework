@@ -6,7 +6,7 @@ Uses TestNG-style annotations for test organization
 
 import pytest
 from base.base_test import BaseTest
-from pages.login_page import LoginPage
+from pages.base_pages.login_page import LoginPage
 from pages.locators.login_locators import LoginLocators
 from utilities.testng_decorators import (
     test_method,

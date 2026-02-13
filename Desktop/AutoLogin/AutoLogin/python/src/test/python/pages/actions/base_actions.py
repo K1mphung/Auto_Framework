@@ -4,7 +4,7 @@ Abstract base class for page actions
 Provides structure for creating action classes for other pages
 """
 
-from pages.base_page import BasePage
+from pages.base_pages.base_page import BasePage
 
 
 class BaseActions(BasePage):

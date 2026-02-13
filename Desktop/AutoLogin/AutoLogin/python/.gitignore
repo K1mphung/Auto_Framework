@@ -110,3 +110,24 @@ allure-report/
 *.tar.gz
 temp/
 temporary/
+# Parent directories and old structure
+Auto-Practice/
+Testcase/
+Component/
+tests/
+report.ini
+sys.path
+../Auto-Practice/
+../Bank/
+../../../*
+!../../../README.md
+!../../../pom.xml
+!../../../requirements.txt
+!../../../QUICKSTART.md
+!../../../PAGE_STRUCTURE_GUIDE.md
+!../../../REFACTORING_SUMMARY.md
+!../../../TESTNG_INTEGRATION.md
+!../../../TESTNG_IMPLEMENTATION_SUMMARY.md
+!../../../CHANGELOG.md
+!../../../Jenkinsfile
+!../../../testng.xml
